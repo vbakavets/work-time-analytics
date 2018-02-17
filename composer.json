@@ -1,0 +1,8 @@
+{
+  "name": "upwork/my-oauth-app",
+  "require": {
+    "upwork/php-upwork": "dev-master",
+    "twig/twig": "^2.0",
+    "symfony/yaml": "^4.0"
+  }
+}

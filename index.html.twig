@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Hours</title>
+    <script src = "/node_modules/fusioncharts/fusioncharts.js"> </script>
+    <script src = "/node_modules/fusioncharts/themes/fusioncharts.theme.fint.js"> </script>
+    <script src = "/node_modules/fusioncharts/fusioncharts.charts.js"> </script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <div id="previousWeekChart" class="col-md-6"></div>
+            <div id="thisWeekChart" class="col-md-6"></div>
+        </div>
+        <div class="row">
+            <div id="dailyWeekChart" class="col-md-12"></div>
+        </div>
+    </div>
+    <script>
+        new FusionCharts({
+            "type": "bar2d",
+            "width": "100%",
+            "dataFormat": "json",
+            "dataSource": {
+                "chart": {
+                    "caption": "Last Week Time",
+                    "theme": "fint",
+                    "showBorder": "1",
+                    "borderColor": "#666666",
+                    "borderThickness": "4",
+                    "borderAlpha": "80",
+                },
+                "data": {{ previousWeekData | json_encode() | raw }},
+                "trendlines": [
+                    {
+                        "line": [
+                            {
+                                "startvalue": "35",
+                                "endvalue": "",
+                                "istrendzone": "",
+                                "valueonright": "1",
+                                "color": "fda813",
+                                "displayvalue": "Cool",
+                                "showontop": "1",
+                                "thickness": "2"
+                            },
+                            {
+                                "startvalue": "40",
+                                "endvalue": "",
+                                "istrendzone": "",
+                                "valueonright": "1",
+                                "color": "f77027",
+                                "displayvalue": "Very Cool",
+                                "showontop": "1",
+                                "thickness": "2"
+                            },
+                            {
+                                "startvalue": "50",
+                                "endvalue": "",
+                                "istrendzone": "",
+                                "valueonright": "1",
+                                "color": "cc0000",
+                                "displayvalue": "Unbelievable",
+                                "showontop": "1",
+                                "thickness": "2"
+                            }
+                        ]
+                    }
+                ]
+            }
+        }).render("previousWeekChart");
+    </script>
+    <script>
+        new FusionCharts({
+            "type": "bar2d",
+            "width": "100%",
+            "dataFormat": "json",
+            "dataSource": {
+                "chart": {
+                    "caption": "This Week Time",
+                    "theme": "fint",
+                    "showBorder": "1",
+                    "borderColor": "#666666",
+                    "borderThickness": "4",
+                    "borderAlpha": "80",
+                },
+                "data": {{ thisWeekData | json_encode() | raw }},
+                "trendlines": [
+                    {
+                        "line": [
+                            {
+                                "startvalue": "35",
+                                "endvalue": "",
+                                "istrendzone": "",
+                                "valueonright": "1",
+                                "color": "fda813",
+                                "displayvalue": "Cool",
+                                "showontop": "1",
+                                "thickness": "2"
+                            },
+                            {
+                                "startvalue": "40",
+                                "endvalue": "",
+                                "istrendzone": "",
+                                "valueonright": "1",
+                                "color": "f77027",
+                                "displayvalue": "Very Cool",
+                                "showontop": "1",
+                                "thickness": "2"
+                            },
+                            {
+                                "startvalue": "50",
+                                "endvalue": "",
+                                "istrendzone": "",
+                                "valueonright": "1",
+                                "color": "cc0000",
+                                "displayvalue": "Unbelievable",
+                                "showontop": "1",
+                                "thickness": "2"
+                            }
+                        ]
+                    }
+                ]
+            }
+        }).render("thisWeekChart");
+    </script>
+    <script>
+        new FusionCharts({
+            "type": "mscolumn2d",
+            "width": "100%",
+            "dataFormat": "json",
+            "dataSource": {
+                "chart": {
+                    "caption": "This Week Daily Time",
+                    "theme": "fint",
+                    "showBorder": "1",
+                    "borderColor": "#666666",
+                    "borderThickness": "4",
+                    "borderAlpha": "80",
+                },
+                "categories": [
+                    {
+                        "category": [
+                            {
+                                "label": "Mon"
+                            },
+                            {
+                                "label": "Tues"
+                            },
+                            {
+                                "label": "Wed"
+                            },
+                            {
+                                "label": "Thu"
+                            },
+                            {
+                                "label": "Fri"
+                            },
+                            {
+                                "label": "Sat"
+                            },
+                            {
+                                "label": "Sun"
+                            }
+                        ]
+                    }
+                ],
+                "dataset": {{ thisWeeDailyData | json_encode() | raw }},
+                "trendlines": [
+                    {
+                        "line": [
+                            {
+                                "startvalue": "7",
+                                "endvalue": "",
+                                "istrendzone": "",
+                                "valueonright": "1",
+                                "color": "fda813",
+                                "displayvalue": "Cool",
+                                "showontop": "1",
+                                "thickness": "2"
+                            },
+                            {
+                                "startvalue": "10",
+                                "endvalue": "",
+                                "istrendzone": "",
+                                "valueonright": "1",
+                                "color": "f77027",
+                                "displayvalue": "Very Cool",
+                                "showontop": "1",
+                                "thickness": "2"
+                            }
+                        ]
+                    }
+                ]
+            }
+        }).render("dailyWeekChart");
+    </script>
+</body>
+</html>
