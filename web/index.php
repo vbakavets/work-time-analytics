@@ -4,11 +4,11 @@ use Symfony\Component\Yaml\Yaml;
 
 date_default_timezone_set('UTC');
 
-require __DIR__ . '/vendor/autoload.php';
+require __DIR__ . '/../vendor/autoload.php';
 define('DEBUG_MODE', false);
 
 
-$config = Yaml::parseFile(__DIR__.'/config/config.yml');
+$config = Yaml::parseFile(__DIR__.'/../config/config.yml');
 $users = $config['users'];
 
 $previousWeekData = [];
@@ -79,7 +79,7 @@ if (DEBUG_MODE) {
     exit;
 }
 
-$loader = new Twig_Loader_Filesystem(__DIR__);
+$loader = new Twig_Loader_Filesystem(__DIR__.'/..');
 $twig = new Twig_Environment($loader);
 
 echo $twig->render('index.html.twig', array(
