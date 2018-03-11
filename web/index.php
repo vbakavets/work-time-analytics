@@ -4,8 +4,8 @@ function GetTogglWeeklyReport($user, $startDate)
 {
     $url = 'https://toggl.com/reports/api/v2/weekly?';
 
-    $queryParameters[] = 'user_agent='.$user['user_agent'];
-    $queryParameters[] = 'workspace_id='.$user['workspace_id'];
+    $queryParameters[] = 'user_agent='.$user['userAgent'];
+    $queryParameters[] = 'workspace_id='.$user['workspaceId'];
     $queryParameters[] = 'since='.$startDate;
 
     $url = $url.implode('&',$queryParameters);
@@ -13,7 +13,7 @@ function GetTogglWeeklyReport($user, $startDate)
     $opts = array(
         'http'=>array(
         'method'=>"GET",
-        'header'=>"Authorization: Basic ".base64_encode($user['api_token'].":api_token")."\r\n"
+        'header'=>"Authorization: Basic ".base64_encode($user['apiToken'].":api_token")."\r\n"
         )
     );
     $context = stream_context_create($opts);
@@ -23,7 +23,7 @@ function GetTogglWeeklyReport($user, $startDate)
 
 function ConvertMilisecondsToHours(int $timeInMs = null)
 {
-    return round($timeInMs/1000/60/60,1);
+    return $timeInMs/1000/60/60;
 }
 
 use Symfony\Component\Yaml\Yaml;
@@ -42,12 +42,14 @@ $thisWeekData = [];
 $thisWeeDailyData = [];
 
 foreach ($users as $username => $user) {
+    $color = isset($user['color']) ? $user['color'] : '';
+
     $previousWeekTime = $thisWeekTime = 0;
     $thisWeekTimePerDay = array_fill(0, 7, [
         'value' => 0
     ]);
 
-    switch ($user['api_type']) {
+    switch ($user['apiType']) {
         case 'upwork':
             $config = new \Upwork\API\Config(
                 array(
@@ -113,16 +115,19 @@ foreach ($users as $username => $user) {
 
     $previousWeekData[] = [
         'label' => $user['name'],
-        'value' => $previousWeekTime
+        'value' => $previousWeekTime,
+        'color' => $color
     ];
 
     $thisWeekData[] = [
         'label' => $user['name'],
-        'value' => $thisWeekTime
+        'value' => $thisWeekTime,
+        'color' => $color
     ];
     $thisWeeDailyData[] = [
         'seriesname' => $user['name'],
-        'data' => $thisWeekTimePerDay
+        'data' => $thisWeekTimePerDay,
+        'color' => $color
     ];
 }
 
