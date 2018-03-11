@@ -101,7 +101,7 @@ foreach ($users as $username => $user) {
             $weeklyReport = GetTogglWeeklyReport($user, $startDate);
             $thisWeekTime = ConvertMilisecondsToHours($weeklyReport->week_totals[7]);
 
-            for ($i=0; $i < 6; $i++) { 
+            for ($i=0; $i < 7; $i++) { 
                 $day_total = ConvertMilisecondsToHours($weeklyReport->week_totals[$i]);
                 $thisWeekTimePerDay[$i] = ['value' => $day_total];
             }
