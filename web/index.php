@@ -132,13 +132,17 @@ foreach ($users as $username => $user) {
             //get current week hours
             $startDate = date('Y-m-d', strtotime('monday this week'));
             $weeklyReport = GetTogglWeeklyReport($user, $startDate);
-            $thisWeekTime = ConvertMilisecondsToHours($weeklyReport->week_totals[7]);
+            $thisWeekTimeMs = $weeklyReport->week_totals[7];
+
+            //get currently running time entry and add to this week
+            $currentlyRunningTimeMs = GetTogglCurrentTimeMs($user);
+            $thisWeekTime = ConvertMilisecondsToHours($thisWeekTimeMs + $currentlyRunningTimeMs);
 
             for ($i=0; $i < 7; $i++) { 
                 $dayTimeMs = $weeklyReport->week_totals[$i];
                 if (($i+1) == date('w')){
-                    // If it is current day then get currently running time entry and count it
-                    $dayTimeMs = $dayTimeMs + GetTogglCurrentTimeMs($user);
+                    //add currently running time entry to the corresponding day of week
+                    $dayTimeMs = $dayTimeMs + $currentlyRunningTimeMs;
                 }
                 $dayTotal = ConvertMilisecondsToHours($dayTimeMs);
                 $thisWeekTimePerDay[$i] = ['value' => $dayTotal];
