@@ -1,5 +1,36 @@
 <?php
 
+function GetTogglCurrentTimeMs($user)
+{
+    $url = 'https://toggl.com/api/v8/time_entries/current';
+
+    $opts = array(
+        'http'=>array(
+        'method'=>"GET",
+        'header'=>"Authorization: Basic ".base64_encode($user['apiToken'].":api_token")."\r\n"
+        )
+    );
+    $context = stream_context_create($opts);
+
+    $currentTimeEntry = json_decode(file_get_contents($url, false, $context));
+
+    if (!isset($currentTimeEntry) || !isset($currentTimeEntry->data) || !isset($currentTimeEntry->data->duration)){
+        return null;
+    }
+
+    $currentUnixTimeSec = round(microtime(true));
+
+    // From Toggl API docs:
+    // duration: time entry duration in seconds. If the time entry is currently running, 
+    // the duration attribute contains a negative value, denoting the start of the time 
+    // entry in seconds since epoch (Jan 1 1970). The correct duration can be calculated 
+    // as current_time + duration, where current_time is the current time in seconds since 
+    // epoch. (integer, required)
+    // For more info go to https://github.com/toggl/toggl_api_docs/blob/master/chapters/time_entries.md#get-running-time-entry
+    
+    return ($currentUnixTimeSec + $currentTimeEntry->data->duration) * 1000; // Convert to miliseconds
+}
+
 function GetTogglWeeklyReport($user, $startDate)
 {
     $url = 'https://toggl.com/reports/api/v2/weekly?';
@@ -104,8 +135,13 @@ foreach ($users as $username => $user) {
             $thisWeekTime = ConvertMilisecondsToHours($weeklyReport->week_totals[7]);
 
             for ($i=0; $i < 7; $i++) { 
-                $day_total = ConvertMilisecondsToHours($weeklyReport->week_totals[$i]);
-                $thisWeekTimePerDay[$i] = ['value' => $day_total];
+                $dayTimeMs = $weeklyReport->week_totals[$i];
+                if (($i+1) == date('w')){
+                    // If it is current day then get currently running time entry and count it
+                    $dayTimeMs = $dayTimeMs + GetTogglCurrentTimeMs($user);
+                }
+                $dayTotal = ConvertMilisecondsToHours($dayTimeMs);
+                $thisWeekTimePerDay[$i] = ['value' => $dayTotal];
             }
             break;
 
