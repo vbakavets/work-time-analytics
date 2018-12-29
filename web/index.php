@@ -1,13 +1,13 @@
 <?php
 
-function GetTogglCurrentTimeMs($user)
+function GetTogglCurrentTimeMs($apiToken)
 {
     $url = 'https://toggl.com/api/v8/time_entries/current';
 
     $opts = array(
         'http'=>array(
         'method'=>"GET",
-        'header'=>"Authorization: Basic ".base64_encode($user['apiToken'].":api_token")."\r\n"
+        'header'=>"Authorization: Basic ".base64_encode($apiToken.":api_token")."\r\n"
         )
     );
     $context = stream_context_create($opts);
@@ -31,12 +31,12 @@ function GetTogglCurrentTimeMs($user)
     return ($currentUnixTimeSec + $currentTimeEntry->data->duration) * 1000; // Convert to miliseconds
 }
 
-function GetTogglWeeklyReport($user, $startDate)
+function GetTogglWeeklyReport($userAgent, $workspaceId, $apiToken, $startDate)
 {
     $url = 'https://toggl.com/reports/api/v2/weekly?';
 
-    $queryParameters[] = 'user_agent='.$user['userAgent'];
-    $queryParameters[] = 'workspace_id='.$user['workspaceId'];
+    $queryParameters[] = 'user_agent='.$userAgent;
+    $queryParameters[] = 'workspace_id='.$workspaceId;
     $queryParameters[] = 'since='.$startDate;
 
     $url = $url.implode('&',$queryParameters);
@@ -44,7 +44,7 @@ function GetTogglWeeklyReport($user, $startDate)
     $opts = array(
         'http'=>array(
         'method'=>"GET",
-        'header'=>"Authorization: Basic ".base64_encode($user['apiToken'].":api_token")."\r\n"
+        'header'=>"Authorization: Basic ".base64_encode($apiToken.":api_token")."\r\n"
         )
     );
     $context = stream_context_create($opts);
@@ -73,6 +73,8 @@ $thisWeekData = [];
 $thisWeeDailyData = [];
 
 foreach ($users as $username => $user) {
+    // @todo Refactor the config - get rid of usage $username here.
+
     $color = isset($user['color']) ? $user['color'] : '';
 
     $previousWeekTime = $thisWeekTime = 0;
@@ -80,77 +82,75 @@ foreach ($users as $username => $user) {
         'value' => 0
     ]);
 
-    switch ($user['apiType']) {
-        case 'upwork':
-            $config = new \Upwork\API\Config(
-                array(
-                    'consumerKey'       => $user['consumerKey'],
-                    'consumerSecret'    => $user['consumerSecret'],
-                    'verifySsl'         => false,
-                    'accessToken'       => $user['accessToken'],
-                    'accessSecret'      => $user['accessSecret'],
-                    'debug'             => DEBUG_MODE,
-                )
-            );
+    if (isset($user['upwork'])) {
+        $system = $user['upwork'];
+        $config = new \Upwork\API\Config(
+            array(
+                'consumerKey'    => $system['consumerKey'],
+                'consumerSecret' => $system['consumerSecret'],
+                'verifySsl'      => false,
+                'accessToken'    => $system['accessToken'],
+                'accessSecret'   => $system['accessSecret'],
+                'debug'          => DEBUG_MODE,
+            )
+        );
 
-            $client = new \Upwork\API\Client($config);
-            $reports = new \Upwork\API\Routers\Reports\Time($client);
+        $client  = new \Upwork\API\Client($config);
+        $reports = new \Upwork\API\Routers\Reports\Time($client);
 
-            $startDate = date('Y-m-d', strtotime('monday previous week'));
-            $endDate = date('Y-m-d', strtotime('sunday this week'));
-        
-            $params = array(
-                'tq' => "
+        $startDate = date('Y-m-d', strtotime('monday previous week'));
+        $endDate   = date('Y-m-d', strtotime('sunday this week'));
+
+        $params = array(
+            'tq' => "
                     SELECT worked_on, hours
                     WHERE worked_on >= '{$startDate}'
                         AND worked_on <= '{$endDate}'
                 "
-            );
+        );
 
-            $timeInfo =  $reports->getByFreelancerFull($username, $params);
+        $timeInfo = $reports->getByFreelancerFull($username, $params);
 
-            //calculate week time
-            $thisMonday = date('Ymd', strtotime('monday this week'));
+        //calculate week time
+        $thisMonday = date('Ymd', strtotime('monday this week'));
 
-            foreach ($timeInfo->table->rows as $row) {
-                if ($row->c[0]->v < $thisMonday) {
-                    $previousWeekTime += $row->c[1]->v;
-                } else {
-                    $thisWeekTime += $row->c[1]->v;
-                    $dayOfWeek = date('N', strtotime($row->c[0]->v));
-                    $thisWeekTimePerDay[$dayOfWeek-1] = ['value' => $row->c[1]->v + $thisWeekTimePerDay[$dayOfWeek-1]['value']];
-                }
+        foreach ($timeInfo->table->rows as $row) {
+            if ($row->c[0]->v < $thisMonday) {
+                $previousWeekTime += $row->c[1]->v;
+            } else {
+                $thisWeekTime                       += $row->c[1]->v;
+                $dayOfWeek                          = date('N', strtotime($row->c[0]->v));
+                $thisWeekTimePerDay[$dayOfWeek - 1] += ['value' => $row->c[1]->v + $thisWeekTimePerDay[$dayOfWeek - 1]['value']];
             }
-            break;
-                
-        case 'toggl':
-            //get previous week hours
-            $startDate = date('Y-m-d', strtotime('monday previous week'));
-            $weeklyReport = GetTogglWeeklyReport($user, $startDate);
-            $previousWeekTime = ConvertMilisecondsToHours($weeklyReport->week_totals[7]);
+        }
+    }
 
-            //get current week hours
-            $startDate = date('Y-m-d', strtotime('monday this week'));
-            $weeklyReport = GetTogglWeeklyReport($user, $startDate);
-            $thisWeekTimeMs = $weeklyReport->week_totals[7];
+    if (isset($user['toggl'])) {
+        $system = $user['toggl'];
 
-            //get currently running time entry and add to this week
-            $currentlyRunningTimeMs = GetTogglCurrentTimeMs($user);
-            $thisWeekTime = ConvertMilisecondsToHours($thisWeekTimeMs + $currentlyRunningTimeMs);
+        //get previous week hours
+        $startDate = date('Y-m-d', strtotime('monday previous week'));
+        $weeklyReport = GetTogglWeeklyReport($system['userAgent'], $system['workspaceId'], $system['apiToken'], $startDate);
+        $previousWeekTime += ConvertMilisecondsToHours($weeklyReport->week_totals[7]);
 
-            for ($i=0; $i < 7; $i++) { 
-                $dayTimeMs = $weeklyReport->week_totals[$i];
-                if (($i+1) == date('w')){
-                    //add currently running time entry to the corresponding day of week
-                    $dayTimeMs = $dayTimeMs + $currentlyRunningTimeMs;
-                }
-                $dayTotal = ConvertMilisecondsToHours($dayTimeMs);
-                $thisWeekTimePerDay[$i] = ['value' => $dayTotal];
+        //get current week hours
+        $startDate = date('Y-m-d', strtotime('monday this week'));
+        $weeklyReport = GetTogglWeeklyReport($system['userAgent'], $system['workspaceId'], $system['apiToken'], $startDate);
+        $thisWeekTimeMs = $weeklyReport->week_totals[7];
+
+        //get currently running time entry and add to this week
+        $currentlyRunningTimeMs = GetTogglCurrentTimeMs($system['apiToken']);
+        $thisWeekTime += ConvertMilisecondsToHours($thisWeekTimeMs + $currentlyRunningTimeMs);
+
+        for ($i=0; $i < 7; $i++) {
+            $dayTimeMs = $weeklyReport->week_totals[$i];
+            if (($i+1) == date('w')){
+                //add currently running time entry to the corresponding day of week
+                $dayTimeMs = $dayTimeMs + $currentlyRunningTimeMs;
             }
-            break;
-
-        default:
-            continue 2;
+            $dayTotal = ConvertMilisecondsToHours($dayTimeMs);
+            $thisWeekTimePerDay[$i]['value'] += $dayTotal;
+        }
     }
 
     $previousWeekData[] = [
