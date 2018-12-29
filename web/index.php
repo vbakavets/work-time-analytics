@@ -71,17 +71,21 @@ $users = $config['users'];
 $previousWeekData = [];
 $thisWeekData = [];
 $thisWeeDailyData = [];
+$userLabels = [];
+$upworkThisWeekData = [];
+$togglThisWeekData = [];
 
 foreach ($users as $username => $user) {
     // @todo Refactor the config - get rid of usage $username here.
 
     $color = isset($user['color']) ? $user['color'] : '';
 
-    $previousWeekTime = $thisWeekTime = 0;
+    $previousWeekTime = 0;
     $thisWeekTimePerDay = array_fill(0, 7, [
         'value' => 0
     ]);
 
+    $thisWeekTime = 0;
     if (isset($user['upwork'])) {
         $system = $user['upwork'];
         $config = new \Upwork\API\Config(
@@ -124,7 +128,12 @@ foreach ($users as $username => $user) {
             }
         }
     }
+    $upworkThisWeekData[] = [
+        'value' => $thisWeekTime,
+        'color' => $color,
+    ];
 
+    $thisWeekTime = 0;
     if (isset($user['toggl'])) {
         $system = $user['toggl'];
 
@@ -152,6 +161,10 @@ foreach ($users as $username => $user) {
             $thisWeekTimePerDay[$i]['value'] += $dayTotal;
         }
     }
+    $togglThisWeekData[] = [
+        'value' => $thisWeekTime,
+        'color' => $color,
+    ];
 
     $previousWeekData[] = [
         'label' => $user['name'],
@@ -159,17 +172,25 @@ foreach ($users as $username => $user) {
         'color' => $color
     ];
 
-    $thisWeekData[] = [
-        'label' => $user['name'],
-        'value' => $thisWeekTime,
-        'color' => $color
-    ];
     $thisWeeDailyData[] = [
         'seriesname' => $user['name'],
         'data' => $thisWeekTimePerDay,
         'color' => $color
     ];
+    $userLabels[]['label'] = $user['name'];
 }
+
+$thisWeekData = [
+    [
+        'seriesname' => 'upwork',
+        'data' => $upworkThisWeekData,
+    ],
+    [
+        'seriesname' => 'toggl',
+        'data' => $togglThisWeekData,
+    ],
+];
+
 
 if (DEBUG_MODE) {
     exit;
@@ -181,5 +202,6 @@ $twig = new Twig_Environment($loader);
 echo $twig->render('index.html.twig', array(
     'previousWeekData' => $previousWeekData,
     'thisWeekData' => $thisWeekData,
-    'thisWeeDailyData' => $thisWeeDailyData
+    'thisWeeDailyData' => $thisWeeDailyData,
+    'userLabels' => $userLabels,
 ));
