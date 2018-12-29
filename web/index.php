@@ -120,7 +120,7 @@ foreach ($users as $username => $user) {
             } else {
                 $thisWeekTime                       += $row->c[1]->v;
                 $dayOfWeek                          = date('N', strtotime($row->c[0]->v));
-                $thisWeekTimePerDay[$dayOfWeek - 1] = ['value' => $row->c[1]->v + $thisWeekTimePerDay[$dayOfWeek - 1]['value']];
+                $thisWeekTimePerDay[$dayOfWeek - 1] += ['value' => $row->c[1]->v + $thisWeekTimePerDay[$dayOfWeek - 1]['value']];
             }
         }
     }
@@ -131,7 +131,7 @@ foreach ($users as $username => $user) {
         //get previous week hours
         $startDate = date('Y-m-d', strtotime('monday previous week'));
         $weeklyReport = GetTogglWeeklyReport($system['userAgent'], $system['workspaceId'], $system['apiToken'], $startDate);
-        $previousWeekTime = ConvertMilisecondsToHours($weeklyReport->week_totals[7]);
+        $previousWeekTime += ConvertMilisecondsToHours($weeklyReport->week_totals[7]);
 
         //get current week hours
         $startDate = date('Y-m-d', strtotime('monday this week'));
@@ -140,7 +140,7 @@ foreach ($users as $username => $user) {
 
         //get currently running time entry and add to this week
         $currentlyRunningTimeMs = GetTogglCurrentTimeMs($system['apiToken']);
-        $thisWeekTime = ConvertMilisecondsToHours($thisWeekTimeMs + $currentlyRunningTimeMs);
+        $thisWeekTime += ConvertMilisecondsToHours($thisWeekTimeMs + $currentlyRunningTimeMs);
 
         for ($i=0; $i < 7; $i++) {
             $dayTimeMs = $weeklyReport->week_totals[$i];
@@ -149,7 +149,7 @@ foreach ($users as $username => $user) {
                 $dayTimeMs = $dayTimeMs + $currentlyRunningTimeMs;
             }
             $dayTotal = ConvertMilisecondsToHours($dayTimeMs);
-            $thisWeekTimePerDay[$i] = ['value' => $dayTotal];
+            $thisWeekTimePerDay[$i]['value'] += $dayTotal;
         }
     }
 
